@@ -47,7 +47,7 @@ def bronze_sales_dlt():
 # select only customer_id, customer_name, state, and city columns from "bronze_customer" table
 @dlt.table
 def silver_customer_dlt():
-  df4= spark.read.table("bronze_customer").select("customer_id", "customer_name", "state", "city")
+  df4= dlt.read("bronze_customer_dlt").select("customer_id", "customer_name", "state", "city")
   # remove all rows with city = null and convert "city" column to upper case
   df4=df4.filter(~df4.city.isin(["null"])).withColumn('city', F.upper(col('city')))
   return df4
@@ -62,7 +62,7 @@ def silver_customer_dlt():
 @dlt.table
 def silver_sales_dlt():
   # select only the following columns: customer_id, number_of_line_items, order_datetime, order_number
-  df5 = spark.read.table("bronze_sales").select("customer_id", "number_of_line_items", "order_datetime", "order_number")
+  df5 = dlt.read("bronze_sales_dlt").select("customer_id", "number_of_line_items", "order_datetime", "order_number")
   #remove rows without an "order_datetime", convert "order_datetime" column to datetime
   df5 = df5.withColumn("order_datetime",from_unixtime(col("order_datetime")))
   df5 = df5.filter(~df5.order_datetime.isin(["null"]))
@@ -78,7 +78,7 @@ def silver_sales_dlt():
 @dlt.table
 def gold_customer_dlt():
   # join silver_customer with silver_sales on "customer_id" column to populate "gold_customer_records" table
-  df_customer = spark.read.table("silver_customer")
-  df_sales = spark.read.table("silver_sales")
+  df_customer = dlt.read("silver_customer_dlt")
+  df_sales = dlt.read("silver_sales_dlt")
   df = df_customer.join(df_sales, ["customer_id"])
   return df
